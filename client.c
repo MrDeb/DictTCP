@@ -54,8 +54,9 @@ int main(int argc, char *argv[])
 	int n;
 	while(1)
 	{
+		printf("\n");
 		printf("************************************\n");
-		printf("* 1: register   2: login   3: quit *\n");
+		printf("  1: register   2: login   3: quit  \n");
 		printf("************************************\n");
 		printf("please choose : ");
 
@@ -79,11 +80,12 @@ int main(int argc, char *argv[])
 				exit(0);
 		}
 	}
-next:
+	next:
 	while(1)
 	{
+		printf("\n");
 		printf("************************************\n");
-		printf("* 1: query   2: history   3: quit *\n");
+		printf("  1: query   2: history   3: quit   \n");
 		printf("************************************\n");
 		printf("please choose : ");
 
@@ -146,10 +148,10 @@ void do_query(int socketfd, MSG *msg)
 	{
 		printf("input word : ");
 		scanf("%s", msg->data);
-		if(strcmp(msg->data, "#") == 0)break;
-		printf("type = %d\n", msg->type);
+		if(strcmp(msg->data, ".quit") == 0)break;
+		//printf("type = %d\n", msg->type);
 		send(socketfd, msg, sizeof(MSG), 0);
-		printf("type = %d\n", msg->type);
+		//printf("type = %d\n", msg->type);
 		recv(socketfd, msg, sizeof(MSG), 0);
 		printf("     %s\n", msg->data);
 	}

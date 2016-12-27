@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 		perror("fail to listen");
 		exit(-1);
 	}
-	signal(SIGCHLD, SIG_IGN);// 避免僵尸进程
+	signal(SIGCHLD, SIG_IGN);// avoid zombie state
 	while ( 1 )
 	{
 		if ((connectfd = accept(listenfd, NULL, NULL)) < 0)
@@ -87,6 +87,35 @@ int main(int argc, char *argv[])
 	}
 	return 0;
 }
+
+void do_client(int connectfd, sqlite3 *db)
+{
+	MSG msg;
+	while (recv(connectfd, &msg, sizeof(MSG), 0) > 0)  // receive request
+	{
+		printf("type = %d\n", msg.type);
+		printf("type = %s\n", msg.data);
+		switch ( msg.type )
+		{
+		case R :
+			do_register(connectfd, &msg, db);
+			break;
+		case L :
+			do_login(connectfd, &msg, db);
+			break;
+		case Q :
+			do_query(connectfd, &msg, db);
+			break;
+		case H :
+			do_history(connectfd, &msg, db);
+			break;
+		}
+	}
+	printf("client quit\n");
+	exit(0);
+	return;
+}
+
 void do_register(int connectfd, MSG *msg, sqlite3 *db)
 {
 	char sqlstr[128] = {0};
@@ -107,19 +136,20 @@ void do_register(int connectfd, MSG *msg, sqlite3 *db)
 
 	return;
 }
+
 void do_login(int connectfd, MSG *msg, sqlite3 *db)
 {
 	char sqlstr[128] = {0};
 	char *errmsg, **result;
 	int nrow, ncolumn;
 	sprintf(sqlstr, "select * from usr where name = '%s' and pass = '%s'", msg->name, msg->data);
-	if(sqlite3_get_table(db, sqlstr, &result, &nrow, &ncolumn, &errmsg) != SQLITE_OK)
+		if(sqlite3_get_table(db, sqlstr, &result, &nrow, &ncolumn, &errmsg) != SQLITE_OK)
 	{
 		printf("error : %s\n", errmsg);
 	}
 	if(nrow == 0)
 	{
-		strcpy(msg->data, "name or password is wrony!!!");
+		strcpy(msg->data, "name or password is wrong.");
 	}
 	else
 	{
@@ -144,26 +174,21 @@ int  do_searchword(int connectfd, MSG *msg)
 		send(connectfd, msg, sizeof(MSG), 0);
 	}
 
-
-	printf("query word is %s len = %d\n", msg->data, len);
+	printf("query word is %s \n", msg->data);
 	while(fgets(temp, 300, fp) != NULL)
 	{
-		//usleep(10);  // dog  --> dog --> e
 		result = strncmp(msg->data, temp, len);
 		if(result > 0) continue;
-		if(result < 0 || temp[len] != ' ')break; //dog --> dogs
+		if(result < 0 || temp[len] != ' ')break; //dog dogs
 		
-		//if(result == 0 && temp[len] == ' ') //找到
+		//if(result == 0 && temp[len] == ' ') // OKAY
 		// result = 0
 		p = temp + len;
-		while(*p == ' ')p++;  //释义
+		while(*p == ' ')p++;  //Get the paraphrase
 		strcpy(msg->data, p);
 		fclose(fp);
-		puts("return  1");
-
 		return 1;
 	}
-
 	fclose(fp);
 	return 0;
 }
@@ -206,7 +231,7 @@ void getdata(char data[])
 
 void do_query(int connectfd, MSG *msg, sqlite3 *db)
 {
-	puts("query");
+	//puts("query");
 	char sqlstr[128], *errmsg;
 	int found = 0;
 	char date[128], word[128];
@@ -229,30 +254,4 @@ void do_query(int connectfd, MSG *msg, sqlite3 *db)
 	send(connectfd, msg, sizeof(MSG), 0);
 	return;
 }
-void do_client(int connectfd, sqlite3 *db)
-{
-	MSG msg;
-	while (recv(connectfd, &msg, sizeof(MSG), 0) > 0)  // receive request
-	{
-		printf("type = %d\n", msg.type);
-		printf("type = %s\n", msg.data);
-		switch ( msg.type )
-		{
-		case R :
-			do_register(connectfd, &msg, db);
-			break;
-		case L :
-			do_login(connectfd, &msg, db);
-			break;
-		case Q :
-			do_query(connectfd, &msg, db);
-			break;
-		case H :
-			do_history(connectfd, &msg, db);
-			break;
-		}
-	}
-	printf("client quit\n");
-	exit(0);
-	return;
-}
+
