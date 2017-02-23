@@ -1,9 +1,13 @@
 Online Dictionary Based on Linux
 
   •	Provided services for clients querying single English word from server.
+  
   •	Coded on C and applied Network Socket Programming, TCP/IP, Multithreading Skills.
+  
   •	Linked list was used to store data which registration, login, query tasks could be performed.
+  
   •	Used SQLite as database.
+  
 
 How to use: (SQLite must be installed)
  1. Clone the repository to your Mac/Linux.
